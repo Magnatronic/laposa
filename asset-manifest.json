@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/laposa/static/css/main.e92b9476.css",
+    "main.js": "/laposa/static/js/main.b2a031f3.js",
+    "index.html": "/laposa/index.html",
+    "main.e92b9476.css.map": "/laposa/static/css/main.e92b9476.css.map",
+    "main.b2a031f3.js.map": "/laposa/static/js/main.b2a031f3.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e92b9476.css",
+    "static/js/main.b2a031f3.js"
+  ]
+}
