@@ -194,14 +194,14 @@
   transform: translateX(-2px) scale(0.95);
 }
 
-/* Panel content */
+/* Panel content - more compact */
 .panel-content {
   height: 100%;
   overflow-y: auto;
-  padding: 24px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 /* ===== PANEL SECTIONS ===== */

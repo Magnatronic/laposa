@@ -1,82 +1,17 @@
-/* Main App Layout */
+/* Main App Layout - Full Screen */
 .app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-}
-
-/* Header Styles */
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
-  font-weight: 600;
-  background: linear-gradient(45deg, #64b5f6, #42a5f5, #2196f3);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.header-controls {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.header-controls button {
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.header-controls button:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.4);
-  transform: translateY(-1px);
-}
-
-.header-controls button.active {
-  background: linear-gradient(45deg, #42a5f5, #2196f3);
-  border-color: #2196f3;
-  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
-}
-
-.header-controls button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.debug-toggle.debug-active {
-  background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-  border-color: #ff6b6b;
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-}
-
-/* Main Content */
-.app-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
+}
+
+/* Main content takes full screen */
+.app-main {
+  height: 100vh;
+  width: 100vw;
 }
 
 /* Responsive Design */

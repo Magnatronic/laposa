@@ -135,10 +135,10 @@
   transform: translateY(-50%) scale(1.1);
 }
 
-/* Panel Content */
+/* Panel Content - more compact */
 .panel-content {
   flex: 1;
-  padding: 1.5rem;
+  padding: 1rem;
   overflow-y: auto;
   margin-left: 50px;
   opacity: 1;
@@ -169,12 +169,12 @@
 }
 
 .panel-section {
-  margin-bottom: 2rem;
+  margin-bottom: 1.2rem;
 }
 
 .panel-section h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1.2rem;
+  margin: 0 0 0.8rem 0;
+  font-size: 1.1rem;
   color: #64b5f6;
 }
 
