@@ -175,21 +175,20 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
       <div className="calibration-content">
         {/* Camera feed section */}
         <div className="camera-section">
-          <div className="camera-container">
-            <Webcam
+          <div className="camera-container">            <Webcam
               ref={webcamRef}
               audio={false}
               screenshotFormat="image/jpeg"
               videoConstraints={{
-                width: 640,
-                height: 480,
-                facingMode: "user"
+                width: { ideal: 640, max: 1280 },
+                height: { ideal: 480, max: 720 },
+                facingMode: "user",
+                aspectRatio: 4/3
               }}
               onUserMedia={handleCameraReady}
               className="webcam-feed"
             />
-            
-            {/* Debug canvas overlay */}
+              {/* Debug canvas overlay */}
             {debugMode && (
               <canvas
                 ref={canvasRef}

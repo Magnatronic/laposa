@@ -1,15 +1,18 @@
-/* Calibration Page Layout */
+/* Calibration Page Layout - Landscape First Design */
 .calibration-page {
   flex: 1;
   display: flex;
   flex-direction: column;
   padding: 1rem 2rem;
   overflow-y: auto;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
 .calibration-header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
+  flex-shrink: 0;
 }
 
 .calibration-header h2 {
@@ -26,16 +29,19 @@
 
 .calibration-content {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 400px;
   gap: 2rem;
   flex: 1;
+  min-height: 0;
 }
 
-/* Camera Section */
+/* Camera Section - Optimized for landscape viewing */
 .camera-section {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   align-items: center;
+  min-height: 0;
 }
 
 .camera-container {
@@ -45,13 +51,18 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  max-width: 640px;
+  max-height: 480px;
 }
 
 .webcam-feed {
   display: block;
   width: 100%;
   height: auto;
-  max-width: 640px;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
 }
 
 .pose-canvas {
@@ -102,33 +113,43 @@
   background: currentColor;
 }
 
-/* Testing Section */
+/* Testing Section - Sidebar layout */
 .testing-section {
   display: flex;
   flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .testing-section h3 {
   margin: 0 0 1rem 0;
   color: #64b5f6;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
+  text-align: center;
 }
 
 .testing-section p {
-  margin: 0 0 2rem 0;
+  margin: 0 0 1.5rem 0;
   color: rgba(255, 255, 255, 0.8);
-  line-height: 1.5;
+  line-height: 1.4;
+  font-size: 0.9rem;
+  text-align: center;
 }
 
 .movement-tests {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
   flex: 1;
+  margin-bottom: 1.5rem;
 }
 
 .test-card {
-  padding: 1.5rem;
+  padding: 1.25rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -260,8 +281,45 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
+/* Smart Responsive Design - Landscape First */
+
+/* Large screens: Side-by-side layout (default) */
+/* Already defined above */
+
+/* Tablet landscape: Compact side-by-side */
+@media (max-width: 1024px) and (orientation: landscape) {
+  .calibration-content {
+    grid-template-columns: 1fr 350px;
+    gap: 1.5rem;
+  }
+  
+  .calibration-page {
+    padding: 1rem 1.5rem;
+  }
+  
+  .calibration-header {
+    margin-bottom: 1rem;
+  }
+  
+  .calibration-header h2 {
+    font-size: 1.4rem;
+  }
+  
+  .testing-section {
+    padding: 1.25rem;
+  }
+  
+  .testing-section h3 {
+    font-size: 1.2rem;
+  }
+  
+  .test-card {
+    padding: 1rem;
+  }
+}
+
+/* Wide screens in portrait or narrow screens: Stack layout */
+@media (max-width: 768px), (orientation: portrait) and (max-width: 1024px) {
   .calibration-content {
     grid-template-columns: 1fr;
     gap: 1.5rem;
@@ -273,48 +331,23 @@
   
   .testing-section {
     order: 2;
+    max-height: none;
+  }
+  
+  .movement-tests {
+    gap: 1rem;
   }
 }
 
-@media (max-width: 768px) {
-  .calibration-page {
-    padding: 1rem;
-  }
-  
-  .calibration-header h2 {
-    font-size: 1.4rem;
-  }
-  
-  .testing-section h3 {
-    font-size: 1.2rem;
-  }
-  
-  .test-card {
-    padding: 1rem;
-  }
-  
-  .test-card h4 {
-    font-size: 1.1rem;
-  }
-  
-  .calibration-controls {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .reset-button, .continue-button {
-    width: 100%;
-    max-width: 300px;
-  }
-}
-
-@media (max-width: 480px) {
+/* Phone portrait: Optimized stacked layout */
+@media (max-width: 480px) and (orientation: portrait) {
   .calibration-page {
     padding: 0.75rem;
+    min-height: 100vh;
   }
   
   .calibration-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
   
   .calibration-header h2 {
@@ -325,8 +358,12 @@
     font-size: 0.9rem;
   }
   
-  .movement-tests {
-    gap: 1rem;
+  .camera-container {
+    max-height: 300px;
+  }
+  
+  .testing-section {
+    padding: 1rem;
   }
   
   .test-card {
@@ -343,5 +380,85 @@
   
   .test-card p {
     font-size: 0.85rem;
+  }
+  
+  .calibration-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .reset-button, .continue-button {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* Phone landscape: Compact side-by-side with smaller camera */
+@media (max-width: 768px) and (orientation: landscape) and (max-height: 500px) {
+  .calibration-page {
+    padding: 0.5rem 1rem;
+    min-height: 100vh;
+  }
+  
+  .calibration-header {
+    margin-bottom: 0.75rem;
+  }
+  
+  .calibration-header h2 {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .calibration-header p {
+    font-size: 0.8rem;
+  }
+  
+  .calibration-content {
+    grid-template-columns: 1fr 280px;
+    gap: 1rem;
+  }
+  
+  .camera-container {
+    max-height: 200px;
+  }
+  
+  .testing-section {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .testing-section h3 {
+    font-size: 1.1rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .testing-section p {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+  }
+  
+  .test-card {
+    padding: 0.75rem;
+  }
+  
+  .test-card h4 {
+    font-size: 0.9rem;
+  }
+  
+  .test-card p {
+    font-size: 0.8rem;
+  }
+  
+  .test-icon {
+    font-size: 1.2rem;
+  }
+  
+  .calibration-controls {
+    margin-top: 1rem;
+  }
+  
+  .reset-button, .continue-button {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
   }
 }
