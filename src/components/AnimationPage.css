@@ -194,14 +194,14 @@
   transform: translateX(-2px) scale(0.95);
 }
 
-/* Panel content - more compact */
+/* Panel content - ultra compact */
 .panel-content {
   height: 100%;
   overflow-y: auto;
-  padding: 16px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 
 /* ===== PANEL SECTIONS ===== */
@@ -210,13 +210,13 @@
 .panel-header {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   border-bottom: 1px solid rgba(100, 181, 246, 0.2);
-  padding-bottom: 20px;
+  padding-bottom: 12px;
 }
 
 .back-button {
-  padding: 12px 20px;
+  padding: 8px 16px;
   background: rgba(100, 181, 246, 0.1);
   border: 1px solid rgba(100, 181, 246, 0.3);
   border-radius: 8px;
@@ -251,13 +251,13 @@
 .status-section {
   background: rgba(100, 181, 246, 0.05);
   border: 1px solid rgba(100, 181, 246, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .status-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
+  margin: 0 0 10px 0;
+  font-size: 16px;
   color: #64b5f6;
   font-weight: 600;
 }
@@ -265,15 +265,15 @@
 .status-indicator {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  font-size: 16px;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
   font-weight: 500;
 }
 
 .status-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
@@ -287,8 +287,8 @@
 .status-details {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 13px;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -296,13 +296,13 @@
 .controls-section {
   background: rgba(100, 181, 246, 0.05);
   border: 1px solid rgba(100, 181, 246, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .controls-section h3 {
-  margin: 0 0 20px 0;
-  font-size: 18px;
+  margin: 0 0 10px 0;
+  font-size: 16px;
   color: #64b5f6;
   font-weight: 600;
 }
@@ -310,12 +310,12 @@
 .control-group {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .control-group label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
 }
@@ -341,31 +341,31 @@
 .theme-select option {
   background: #1a1a2e;
   color: white;
-  padding: 12px;
+  padding: 8px;
 }
 
 .control-buttons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 
 .play-pause-button,
 .camera-toggle-button {
-  padding: 14px 20px;
+  padding: 10px 16px;
   border: 1px solid rgba(100, 181, 246, 0.3);
   border-radius: 8px;
   background: rgba(100, 181, 246, 0.1);
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
-  min-height: 48px;
+  min-height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
 }
 
 .play-pause-button:hover,
@@ -395,20 +395,20 @@
 .movement-section {
   background: rgba(100, 181, 246, 0.05);
   border: 1px solid rgba(100, 181, 246, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .movement-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
+  margin: 0 0 10px 0;
+  font-size: 16px;
   color: #64b5f6;
   font-weight: 600;
 }
 
 .movement-indicators {
   display: flex;
-  gap: 16px;
+  gap: 10px;
 }
 
 .indicator {
@@ -416,11 +416,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 16px;
+  gap: 6px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.3s ease;
 }
 
@@ -431,7 +431,7 @@
 }
 
 .indicator-icon {
-  font-size: 24px;
+  font-size: 20px;
   transition: all 0.3s ease;
 }
 
@@ -441,7 +441,7 @@
 }
 
 .indicator-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.8);
   text-align: center;
@@ -451,35 +451,34 @@
 .debug-section {
   background: rgba(255, 152, 0, 0.05);
   border: 1px solid rgba(255, 152, 0, 0.2);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 8px;
+  padding: 12px;
 }
 
 .debug-section h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
+  margin: 0 0 10px 0;
+  font-size: 16px;
   color: #ff9800;
   font-weight: 600;
 }
 
 .debug-controls {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .debug-toggle {
-  padding: 10px 16px;
+  padding: 8px 12px;
   background: rgba(255, 152, 0, 0.1);
   border: 1px solid rgba(255, 152, 0, 0.3);
-  border-radius: 8px;
+  border-radius: 6px;
   color: #ff9800;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 14px;
-  min-height: 40px;
+  font-size: 13px;
+  min-height: 36px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  align-items: center;  justify-content: center;
+  gap: 6px;
 }
 
 .debug-toggle:hover {
@@ -494,8 +493,8 @@
 .debug-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  font-size: 12px;
+  gap: 6px;
+  font-size: 11px;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -508,8 +507,8 @@
   }
   
   .panel-content {
-    padding: 20px;
-    gap: 20px;
+    padding: 16px;
+    gap: 12px;
   }
   
   .camera-feed-overlay {
