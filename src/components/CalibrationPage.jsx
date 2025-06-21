@@ -44,88 +44,13 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
         setModelLoaded(true)
         console.log('[CalibrationPage] Pose detection initialized successfully')
       } catch (error) {
-        console.error('[CalibrationPage] Failed to initialize pose detection:', error)
-      }
+        console.error('[CalibrationPage] Failed to initialize pose detection:', error)      }
     }
 
     initializePoseDetection()
   }, [])
 
-  // Start pose detection loop when both camera and model are ready
-  useEffect(() => {
-    if (!cameraReady || !modelLoaded || !poseDetector) return
-
-    console.log('[CalibrationPage] Starting pose detection loop')
-    const detectPoses = async () => {
-      if (webcamRef.current?.video?.readyState === 4) {
-        try {
-          const poses = await poseDetector.detectPoses(webcamRef.current.video)
-          setCurrentPoses(poses)
-            // Always draw poses for user feedback
-          drawPoses(poses)
-          
-          // Analyze poses for movement detection
-          analyzePosesForMovements(poses)
-        } catch (error) {
-          console.error('[CalibrationPage] Error detecting poses:', error)
-        }
-      }
-    }
-
-    const intervalId = setInterval(detectPoses, 100) // Check every 100ms
-    return () => clearInterval(intervalId)
-  }, [cameraReady, modelLoaded, poseDetector, debugMode])
-
-  // Analyze detected poses for hand movements
-  const analyzePosesForMovements = (poses) => {
-    if (poses.length === 0) return
-
-    const pose = poses[0] // Use first detected person
-    const keypoints = pose.keypoints
-
-    // Get key body part positions
-    const leftWrist = keypoints.find(kp => kp.name === 'left_wrist')
-    const rightWrist = keypoints.find(kp => kp.name === 'right_wrist')
-    const nose = keypoints.find(kp => kp.name === 'nose')
-    const leftEar = keypoints.find(kp => kp.name === 'left_ear')
-    const rightEar = keypoints.find(kp => kp.name === 'right_ear')
-
-    // Calculate head position (use nose, or average of ears if nose not detected)
-    let headY = null
-    if (nose && nose.score > 0.3) {
-      headY = nose.y
-    } else if (leftEar && rightEar && leftEar.score > 0.3 && rightEar.score > 0.3) {
-      headY = (leftEar.y + rightEar.y) / 2
-    }
-
-    // Check for left hand above head
-    if (leftWrist && headY && leftWrist.score > 0.3) {
-      if (leftWrist.y < headY - 40) { // Hand is above head with 40px buffer
-        if (!leftHandRaisedDetected) {
-          setLeftRaiseCount(prev => prev + 1)
-          setLeftHandRaisedDetected(true)
-          console.log('[CalibrationPage] Left hand above head detected! Count:', leftRaiseCount + 1)
-          
-          // Reset detection after a delay to allow for multiple raises
-          setTimeout(() => setLeftHandRaisedDetected(false), 1500)
-        }
-      }
-    }
-
-    // Check for right hand above head
-    if (rightWrist && headY && rightWrist.score > 0.3) {
-      if (rightWrist.y < headY - 40) { // Hand is above head with 40px buffer
-        if (!rightHandRaisedDetected) {
-          setRightRaiseCount(prev => prev + 1)
-          setRightHandRaisedDetected(true)
-          console.log('[CalibrationPage] Right hand above head detected! Count:', rightRaiseCount + 1)
-          
-          // Reset detection after a delay to allow for multiple raises
-          setTimeout(() => setRightHandRaisedDetected(false), 1500)
-        }
-      }
-    }
-  }  // Draw pose keypoints on canvas for user feedback
+  // Draw pose keypoints on canvas for user feedback
   const drawPoses = (poses) => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -216,6 +141,81 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
       }
     })
   }
+
+  // Start pose detection loop when both camera and model are ready
+  useEffect(() => {
+    if (!cameraReady || !modelLoaded || !poseDetector) return
+
+    console.log('[CalibrationPage] Starting pose detection loop')
+    const detectPoses = async () => {
+      if (webcamRef.current?.video?.readyState === 4) {
+        try {
+          const poses = await poseDetector.detectPoses(webcamRef.current.video)
+          setCurrentPoses(poses)
+            // Always draw poses for user feedback
+          drawPoses(poses)
+          
+          // Analyze poses for movement detection
+          analyzePosesForMovements(poses)
+        } catch (error) {
+          console.error('[CalibrationPage] Error detecting poses:', error)
+        }
+      }
+    }
+
+    const intervalId = setInterval(detectPoses, 100) // Check every 100ms
+    return () => clearInterval(intervalId)
+  }, [cameraReady, modelLoaded, poseDetector, debugMode])
+
+  // Analyze detected poses for hand movements
+  const analyzePosesForMovements = (poses) => {
+    if (poses.length === 0) return
+
+    const pose = poses[0] // Use first detected person
+    const keypoints = pose.keypoints
+
+    // Get key body part positions
+    const leftWrist = keypoints.find(kp => kp.name === 'left_wrist')
+    const rightWrist = keypoints.find(kp => kp.name === 'right_wrist')
+    const nose = keypoints.find(kp => kp.name === 'nose')
+    const leftEar = keypoints.find(kp => kp.name === 'left_ear')
+    const rightEar = keypoints.find(kp => kp.name === 'right_ear')
+
+    // Calculate head position (use nose, or average of ears if nose not detected)
+    let headY = null
+    if (nose && nose.score > 0.3) {
+      headY = nose.y
+    } else if (leftEar && rightEar && leftEar.score > 0.3 && rightEar.score > 0.3) {
+      headY = (leftEar.y + rightEar.y) / 2
+    }
+
+    // Check for left hand above head
+    if (leftWrist && headY && leftWrist.score > 0.3) {
+      if (leftWrist.y < headY - 40) { // Hand is above head with 40px buffer
+        if (!leftHandRaisedDetected) {
+          setLeftRaiseCount(prev => prev + 1)
+          setLeftHandRaisedDetected(true)
+          console.log('[CalibrationPage] Left hand above head detected! Count:', leftRaiseCount + 1)
+          
+          // Reset detection after a delay to allow for multiple raises
+          setTimeout(() => setLeftHandRaisedDetected(false), 1500)
+        }
+      }
+    }
+
+    // Check for right hand above head
+    if (rightWrist && headY && rightWrist.score > 0.3) {
+      if (rightWrist.y < headY - 40) { // Hand is above head with 40px buffer
+        if (!rightHandRaisedDetected) {
+          setRightRaiseCount(prev => prev + 1)
+          setRightHandRaisedDetected(true)
+          console.log('[CalibrationPage] Right hand above head detected! Count:', rightRaiseCount + 1)
+          
+          // Reset detection after a delay to allow for multiple raises
+          setTimeout(() => setRightHandRaisedDetected(false), 1500)
+        }
+      }
+    }  }
   
   // Check if calibration is complete
   useEffect(() => {
