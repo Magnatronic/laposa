@@ -20,9 +20,11 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
   const [leftRaiseCount, setLeftRaiseCount] = useState(0)
   const [rightRaiseCount, setRightRaiseCount] = useState(0)
   const REQUIRED_RAISE_COUNT = 3 // Number of raises needed to confirm detection
-  
-  // Control panel state
+    // Control panel state
   const [isPanelExpanded, setIsPanelExpanded] = useState(true)
+  
+  // Camera error tracking
+  const [cameraError, setCameraError] = useState(null)
   
   console.log('[CalibrationPage] State:', {
     cameraReady,
@@ -251,10 +253,10 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
     console.log('[CalibrationPage] Camera is ready')
     setCameraReady(true)
   }
-
   const handleCameraError = (error) => {
     console.error('[CalibrationPage] Camera error:', error)
     setCameraReady(false)
+    setCameraError(error)
     
     // Try to provide helpful error message
     if (error.name === 'NotAllowedError') {
@@ -268,6 +270,16 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
     } else {
       console.error('[CalibrationPage] Unknown camera error:', error.message)
     }
+  }
+
+  const retryCamera = () => {
+    console.log('[CalibrationPage] Retrying camera access...')
+    setCameraError(null)
+    setCameraReady(false)
+    
+    // Force remount of webcam component by triggering a re-render
+    // This will cause react-webcam to try again
+    window.location.reload()
   }
 
   const resetCalibration = () => {
@@ -339,12 +351,59 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
                 <span className="status-icon">{currentPoses.length > 0 ? '👤' : '❓'}</span>
                 <span>Person Detected: {currentPoses.length > 0 ? 'Yes' : 'No'}</span>
               </div>
-            </div>
-            {!cameraReady && (
+            </div>            {!cameraReady && (
               <div className="camera-help">
-                <p style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
-                  💡 If camera doesn't load: Check browser permissions, try Firefox, or ensure HTTPS access.
-                </p>
+                {cameraError?.name === 'NotReadableError' ? (
+                  <div style={{fontSize: '12px', marginTop: '8px'}}>
+                    <p style={{color: '#ff6b6b', fontWeight: 'bold', marginBottom: '4px'}}>
+                      🚫 Camera is being used by another application
+                    </p>
+                    <p style={{color: '#666', marginBottom: '8px'}}>
+                      Please close: Teams, Zoom, Skype, Camera app, or other browser tabs using camera
+                    </p>
+                    <button 
+                      onClick={retryCamera}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#007acc',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔄 Retry Camera
+                    </button>
+                  </div>
+                ) : cameraError?.name === 'NotAllowedError' ? (
+                  <div style={{fontSize: '12px', marginTop: '8px'}}>
+                    <p style={{color: '#ff6b6b', fontWeight: 'bold', marginBottom: '4px'}}>
+                      🔒 Camera access denied
+                    </p>
+                    <p style={{color: '#666', marginBottom: '8px'}}>
+                      Click the camera icon in your browser's address bar and allow camera access
+                    </p>
+                    <button 
+                      onClick={retryCamera}
+                      style={{
+                        padding: '6px 12px',
+                        backgroundColor: '#007acc',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      🔄 Retry Camera
+                    </button>
+                  </div>
+                ) : (
+                  <p style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
+                    💡 If camera doesn't load: Check browser permissions, try Firefox, or ensure HTTPS access.
+                  </p>
+                )}
               </div>
             )}
           </div>{/* Movement tests - streamlined */}
