@@ -129,28 +129,61 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
       }
     }
   }
-
-  // Draw pose keypoints on canvas for debugging
+  // Draw pose keypoints on canvas for user feedback
   const drawPoses = (poses) => {
     const canvas = canvasRef.current
+    if (!canvas) return
+    
     const ctx = canvas.getContext('2d')
     
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height)
     
     poses.forEach(pose => {
-      // Draw keypoints
+      // Draw keypoints with clear colors and labels
       pose.keypoints.forEach(keypoint => {
         if (keypoint.score > 0.3) {
-          ctx.fillStyle = keypoint.name.includes('left') ? 'red' : 'blue'
+          // Use distinct colors for left/right/center body parts
+          if (keypoint.name.includes('left')) {
+            ctx.fillStyle = '#ff4444' // Red for left
+          } else if (keypoint.name.includes('right')) {
+            ctx.fillStyle = '#4444ff' // Blue for right
+          } else {
+            ctx.fillStyle = '#44ff44' // Green for center (nose, etc.)
+          }
+          
+          // Draw keypoint circle
           ctx.beginPath()
-          ctx.arc(keypoint.x, keypoint.y, 5, 0, 2 * Math.PI)
+          ctx.arc(keypoint.x, keypoint.y, 6, 0, 2 * Math.PI)
           ctx.fill()
           
-          // Label keypoints in debug mode
-          ctx.fillStyle = 'white'
-          ctx.font = '12px Arial'
-          ctx.fillText(keypoint.name, keypoint.x + 10, keypoint.y)
+          // Add white outline for visibility
+          ctx.strokeStyle = 'white'
+          ctx.lineWidth = 2
+          ctx.stroke()
+          
+          // Always show labels for key body parts (not just in debug mode)
+          if (['nose', 'left_wrist', 'right_wrist', 'left_shoulder', 'right_shoulder'].includes(keypoint.name)) {
+            ctx.fillStyle = 'white'
+            ctx.strokeStyle = 'black'
+            ctx.lineWidth = 3
+            ctx.font = 'bold 14px Arial'
+            
+            // Add text background for better readability
+            const text = keypoint.name.replace('_', ' ')
+            const textWidth = ctx.measureText(text).width
+            const textX = keypoint.x + 10
+            const textY = keypoint.y - 10
+            
+            // Draw text background
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
+            ctx.fillRect(textX - 2, textY - 16, textWidth + 4, 20)
+            
+            // Draw text with outline
+            ctx.strokeText(text, textX, textY)
+            ctx.fillStyle = 'white'
+            ctx.fillText(text, textX, textY)
+          }
         }
       })
     })
@@ -199,17 +232,14 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
               aspectRatio: 4/3
             }}
             onUserMedia={handleCameraReady}
-            className="webcam-feed"
+            className="webcam-feed"          />
+          {/* Pose visualization canvas overlay - always visible for calibration feedback */}
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={480}
+            className="pose-canvas"
           />
-            {/* Debug canvas overlay */}
-          {debugMode && (
-            <canvas
-              ref={canvasRef}
-              width={640}
-              height={480}
-              className="pose-canvas"
-            />
-          )}
         </div>
       </div>
 
