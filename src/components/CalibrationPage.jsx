@@ -32,7 +32,6 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
     rightHandRaisedDetected,
     isCalibrated
   })
-
   // Initialize pose detection when component mounts
   useEffect(() => {
     const initializePoseDetection = async () => {
@@ -47,7 +46,27 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
         console.error('[CalibrationPage] Failed to initialize pose detection:', error)      }
     }
 
+    // Test camera availability directly
+    const testCameraAccess = async () => {
+      try {
+        console.log('[CalibrationPage] Testing camera access directly...')
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: 640,
+            height: 480,
+            facingMode: "user"
+          }
+        })
+        console.log('[CalibrationPage] Direct camera access successful')
+        // Stop the test stream
+        stream.getTracks().forEach(track => track.stop())
+      } catch (error) {
+        console.error('[CalibrationPage] Direct camera access failed:', error)
+      }
+    }
+
     initializePoseDetection()
+    testCameraAccess()
   }, [])
 
   // Draw pose keypoints on canvas for user feedback
@@ -233,6 +252,24 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
     setCameraReady(true)
   }
 
+  const handleCameraError = (error) => {
+    console.error('[CalibrationPage] Camera error:', error)
+    setCameraReady(false)
+    
+    // Try to provide helpful error message
+    if (error.name === 'NotAllowedError') {
+      console.error('[CalibrationPage] Camera permission denied by user')
+    } else if (error.name === 'NotFoundError') {
+      console.error('[CalibrationPage] No camera device found')
+    } else if (error.name === 'NotReadableError') {
+      console.error('[CalibrationPage] Camera already in use by another application')
+    } else if (error.name === 'OverconstrainedError') {
+      console.error('[CalibrationPage] Camera constraints too restrictive')
+    } else {
+      console.error('[CalibrationPage] Unknown camera error:', error.message)
+    }
+  }
+
   const resetCalibration = () => {
     console.log('[CalibrationPage] Resetting calibration')
     setLeftRaiseCount(0)
@@ -248,19 +285,18 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
     <div className="calibration-page">
       {/* Full-height camera section */}
       <div className="camera-section">
-        <div className="camera-container">
-          <Webcam
+        <div className="camera-container">          <Webcam
             ref={webcamRef}
             audio={false}
             screenshotFormat="image/jpeg"
             videoConstraints={{
-              width: { ideal: 640, max: 1280 },
-              height: { ideal: 480, max: 720 },
-              facingMode: "user",
-              aspectRatio: 4/3
+              width: 640,
+              height: 480,
+              facingMode: "user"
             }}
             onUserMedia={handleCameraReady}
-            className="webcam-feed"          />
+            onUserMediaError={handleCameraError}
+            className="webcam-feed"/>
           {/* Pose visualization canvas overlay - always visible for calibration feedback */}
           <canvas
             ref={canvasRef}
@@ -287,9 +323,7 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
           <div className="panel-header">
             <h2>Camera Calibration</h2>
             <p>Position yourself so your full body is visible, then test movement detection.</p>
-          </div>
-
-          {/* System Status */}
+          </div>          {/* System Status */}
           <div className="panel-section">
             <h3>System Status</h3>
             <div className="status-indicators">
@@ -306,6 +340,13 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
                 <span>Person Detected: {currentPoses.length > 0 ? 'Yes' : 'No'}</span>
               </div>
             </div>
+            {!cameraReady && (
+              <div className="camera-help">
+                <p style={{fontSize: '12px', color: '#888', marginTop: '8px'}}>
+                  💡 If camera doesn't load: Check browser permissions, try Firefox, or ensure HTTPS access.
+                </p>
+              </div>
+            )}
           </div>{/* Movement tests - streamlined */}
           <div className="panel-section">
             <h3>Movement Tests</h3>
