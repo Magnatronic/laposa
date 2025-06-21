@@ -295,8 +295,7 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
         <div 
           ref={p5ContainerRef}
           className="animation-canvas-container"
-        />
-          {/* Collapsible Camera Feed Overlay */}
+        />        {/* Single Camera Feed - Always running, positioned based on visibility */}
         <div className={`camera-feed-overlay ${showCameraFeed ? 'visible' : 'hidden'}`}>
           <div className="camera-feed-container">
             <div className="camera-feed-header">
@@ -310,42 +309,20 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
               </button>
             </div>
             <div className="camera-feed-video">
-              {/* When camera feed is visible, show the actual camera */}
-              {showCameraFeed && (
-                <Webcam
-                  ref={webcamRef}
-                  audio={false}
-                  screenshotFormat="image/jpeg"
-                  videoConstraints={{
-                    width: 320,
-                    height: 240,
-                    facingMode: "user"
-                  }}
-                  onUserMedia={handleCameraReady}
-                  className="visible-webcam"
-                />
-              )}
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                screenshotFormat="image/jpeg"
+                videoConstraints={{
+                  width: 320,
+                  height: 240,
+                  facingMode: "user"
+                }}
+                onUserMedia={handleCameraReady}
+                className={`webcam-feed ${showCameraFeed ? 'visible-webcam' : 'hidden-webcam'}`}
+              />
             </div>
           </div>
-        </div>
-        
-        {/* Hidden camera feed for pose detection (used when overlay is hidden) */}
-        <div className="hidden-camera">
-          {/* When camera feed is hidden, use the hidden camera for pose detection */}
-          {!showCameraFeed && (
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              screenshotFormat="image/jpeg"
-              videoConstraints={{
-                width: 320,
-                height: 240,
-                facingMode: "user"
-              }}
-              onUserMedia={handleCameraReady}
-              className="hidden-webcam"
-            />
-          )}
         </div>
       </div>
 

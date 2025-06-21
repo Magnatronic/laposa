@@ -201,8 +201,7 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
             onUserMedia={handleCameraReady}
             className="webcam-feed"
           />
-          
-          {/* Debug canvas overlay */}
+            {/* Debug canvas overlay */}
           {debugMode && (
             <canvas
               ref={canvasRef}
@@ -211,16 +210,6 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
               className="pose-canvas"
             />
           )}
-          
-          {/* Camera status overlay */}
-          <div className="camera-status">
-            <div className={`status-indicator ${cameraReady ? 'ready' : 'loading'}`}>
-              Camera: {cameraReady ? 'Ready' : 'Loading...'}
-            </div>
-            <div className={`status-indicator ${modelLoaded ? 'ready' : 'loading'}`}>
-              AI Model: {modelLoaded ? 'Loaded' : 'Loading...'}
-            </div>
-          </div>
         </div>
       </div>
 
@@ -236,48 +225,64 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
         </button>
 
         {/* Panel content */}
-        <div className="panel-content">
-          {/* Header section */}
+        <div className="panel-content">          {/* Header section */}
           <div className="panel-header">
-            <h2>Camera Calibration & Movement Testing</h2>
-            <p>Position yourself so your full body is visible in the camera feed. We'll test if the system can detect when you raise your hands above your head.</p>
+            <h2>Camera Calibration</h2>
+            <p>Position yourself so your full body is visible, then test movement detection.</p>
           </div>
 
-          {/* Movement tests */}
+          {/* System Status */}
+          <div className="panel-section">
+            <h3>System Status</h3>
+            <div className="status-indicators">
+              <div className={`status-item ${cameraReady ? 'ready' : 'loading'}`}>
+                <span className="status-icon">{cameraReady ? '✅' : '⏳'}</span>
+                <span>Camera: {cameraReady ? 'Ready' : 'Loading...'}</span>
+              </div>
+              <div className={`status-item ${modelLoaded ? 'ready' : 'loading'}`}>
+                <span className="status-icon">{modelLoaded ? '✅' : '⏳'}</span>
+                <span>AI Model: {modelLoaded ? 'Loaded' : 'Loading...'}</span>
+              </div>
+              <div className={`status-item ${currentPoses.length > 0 ? 'ready' : 'waiting'}`}>
+                <span className="status-icon">{currentPoses.length > 0 ? '👤' : '❓'}</span>
+                <span>Person Detected: {currentPoses.length > 0 ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+          </div>{/* Movement tests - streamlined */}
           <div className="panel-section">
             <h3>Movement Tests</h3>
-            <div className="movement-tests">
-              <div className={`test-card ${leftRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
-                <div className="test-icon">🙋‍♀️</div>
-                <h4>Left Hand Above Head</h4>
-                <p>Raise your left hand straight up above your head</p>
-                <div className="test-progress">
-                  <div className="progress-bar">
+            <p className="test-instructions">Raise each hand above your head to test movement detection:</p>
+            
+            <div className="movement-tests-compact">
+              <div className={`test-item ${leftRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
+                <div className="test-info">
+                  <span className="test-icon">🙋‍♀️</span>
+                  <span className="test-name">Left Hand</span>
+                </div>
+                <div className="test-status">
+                  <span className="count">{leftRaiseCount}/{REQUIRED_RAISE_COUNT}</span>
+                  <div className="mini-progress">
                     <div 
-                      className="progress-fill"
+                      className="mini-fill"
                       style={{ width: `${(leftRaiseCount / REQUIRED_RAISE_COUNT) * 100}%` }}
                     ></div>
                   </div>
-                  <span className="progress-text">
-                    {leftRaiseCount}/{REQUIRED_RAISE_COUNT} raises detected
-                  </span>
                 </div>
               </div>
 
-              <div className={`test-card ${rightRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
-                <div className="test-icon">🙋‍♂️</div>
-                <h4>Right Hand Above Head</h4>
-                <p>Raise your right hand straight up above your head</p>
-                <div className="test-progress">
-                  <div className="progress-bar">
+              <div className={`test-item ${rightRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
+                <div className="test-info">
+                  <span className="test-icon">🙋‍♂️</span>
+                  <span className="test-name">Right Hand</span>
+                </div>
+                <div className="test-status">
+                  <span className="count">{rightRaiseCount}/{REQUIRED_RAISE_COUNT}</span>
+                  <div className="mini-progress">
                     <div 
-                      className="progress-fill"
+                      className="mini-fill"
                       style={{ width: `${(rightRaiseCount / REQUIRED_RAISE_COUNT) * 100}%` }}
                     ></div>
                   </div>
-                  <span className="progress-text">
-                    {rightRaiseCount}/{REQUIRED_RAISE_COUNT} raises detected
-                  </span>
                 </div>
               </div>
             </div>
