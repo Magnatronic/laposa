@@ -1,0 +1,60 @@
+# Workflow for deploying tablet-testing branch to a subdirectory
+name: Deploy Tablet Testing to Pages Subdirectory
+
+on:
+  push:
+    branches: ['tablet-testing']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'pages-tablet-testing'
+  cancel-in-progress: true
+
+jobs:
+  deploy-subdirectory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tablet-testing
+        uses: actions/checkout@v4
+        with:
+          ref: tablet-testing
+        
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build with subdirectory base path
+        run: npm run build
+        env:
+          PUBLIC_URL: /laposa/tablet-testing
+          
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages-content
+          
+      - name: Create tablet-testing subdirectory
+        run: |
+          mkdir -p gh-pages-content/tablet-testing
+          rm -rf gh-pages-content/tablet-testing/*
+          cp -r dist/* gh-pages-content/tablet-testing/
+          
+      - name: Deploy to gh-pages
+        run: |
+          cd gh-pages-content
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add tablet-testing/
+          git commit -m "Deploy tablet-testing version" || exit 0
+          git push
