@@ -4,8 +4,7 @@ import p5 from 'p5'
  * P5Animation class manages p5.js animations triggered by movement detection
  * Provides various visual themes for music therapy interactions
  */
-class P5Animation {
-  constructor(container, theme = 'particles') {
+class P5Animation {  constructor(container, theme = 'particles') {
     this.container = container
     this.currentTheme = theme
     this.p5Instance = null
@@ -13,6 +12,32 @@ class P5Animation {
     this.ripples = []
     this.movements = {}
     this.poses = []
+    
+    // Add rate limiting for effects
+    this.lastEffectTime = {
+      leftHand: 0,
+      rightHand: 0
+    }
+    this.effectCooldown = 150 // Minimum time between effects in milliseconds
+    
+    // Wrist cursor tracking for smooth, distinct visual feedback
+    this.wristCursors = {
+      left: { 
+        x: 0, y: 0, 
+        targetX: 0, targetY: 0, 
+        visible: false, 
+        alpha: 0,
+        smoothness: 0.3 // Smooth interpolation factor
+      },
+      right: { 
+        x: 0, y: 0, 
+        targetX: 0, targetY: 0, 
+        visible: false, 
+        alpha: 0,
+        smoothness: 0.3
+      }
+    }
+    this.showWristCursors = true // Toggle for wrist cursor visibility
     
     // Animation settings
     this.settings = {
@@ -35,12 +60,12 @@ class P5Animation {
    * Initialize p5.js instance with the container
    */
   initializeP5() {
-    const sketch = (p) => {
-      // Store reference to p5 instance
+    const sketch = (p) => {      // Store reference to p5 instance
       this.p = p
-
+      
       p.setup = () => {
-        console.log('[P5Animation] Setting up canvas')
+        console.log('[P5Animation] Setting up canvas...')
+        
         // Create canvas that fills the container
         const canvas = p.createCanvas(
           this.container.offsetWidth || 800,
@@ -48,10 +73,18 @@ class P5Animation {
         )
         canvas.parent(this.container)
         
+        // Explicitly position the canvas to fix local development issue
+        canvas.canvas.style.position = 'absolute'
+        canvas.canvas.style.top = '0px'
+        canvas.canvas.style.left = '0px'
+        canvas.canvas.style.width = '100%'
+        canvas.canvas.style.height = '100%'
+        canvas.canvas.style.zIndex = '1'
+        
+        console.log('[P5Animation] Canvas created and positioned:', p.width, 'x', p.height)
+        
         // Set initial background
         p.background(...this.settings.backgroundColor)
-        
-        console.log('[P5Animation] Canvas created:', p.width, 'x', p.height)
       }
 
       p.draw = () => {
@@ -64,6 +97,15 @@ class P5Animation {
           this.container.offsetWidth || 800,
           this.container.offsetHeight || 600
         )
+        
+        // Ensure canvas positioning is maintained after resize
+        const canvas = p.canvas
+        canvas.style.position = 'absolute'
+        canvas.style.top = '0px'
+        canvas.style.left = '0px'
+        canvas.style.width = '100%'
+        canvas.style.height = '100%'
+        canvas.style.zIndex = '1'
       }
     }
 
@@ -99,11 +141,12 @@ class P5Animation {
         break
       default:
         this.drawParticles()
-    }
-
-    // Update particle systems
+    }    // Update particle systems
     this.updateParticles()
     this.updateRipples()
+    
+    // Draw wrist cursors
+    this.drawWristCursors()
   }  /**
    * Map pose coordinates from camera space to canvas space
    * @param {number} x - X coordinate from pose detection (camera space)
@@ -112,19 +155,31 @@ class P5Animation {
    * @param {number} cameraHeight - Actual camera height (optional, defaults to 240)
    * @returns {Object} Mapped coordinates {x, y} in canvas space
    */  mapPoseToCanvas(x, y, cameraWidth = 320, cameraHeight = 240) {
-    if (!this.p) return { x: 0, y: 0 }
+    if (!this.p) {
+      console.warn('[P5Animation] p5 instance not available for mapping')
+      return { x: 0, y: 0 }
+    }
+    
+    // Debug canvas size to identify the coordinate issue
+    const canvasWidth = this.p.width
+    const canvasHeight = this.p.height
     
     // Map coordinates proportionally to canvas size
-    const mappedX = (x / cameraWidth) * this.p.width
-    const mappedY = (y / cameraHeight) * this.p.height
+    // Flip X coordinate horizontally so left hand appears on left side of animation
+    const mappedX = ((cameraWidth - x) / cameraWidth) * canvasWidth
+    const mappedY = (y / cameraHeight) * canvasHeight
     
     // Ensure coordinates are within canvas bounds
-    const clampedX = Math.max(0, Math.min(this.p.width, mappedX))
-    const clampedY = Math.max(0, Math.min(this.p.height, mappedY))
+    const clampedX = Math.max(0, Math.min(canvasWidth, mappedX))
+    const clampedY = Math.max(0, Math.min(canvasHeight, mappedY))
     
-    // Only log occasionally to avoid spam (every 30th call)
-    if (Math.random() < 0.033) {
-      console.log(`[P5Animation] Coordinate mapping - Camera: (${x.toFixed(1)}, ${y.toFixed(1)}) [${cameraWidth}x${cameraHeight}] -> Canvas: (${clampedX.toFixed(1)}, ${clampedY.toFixed(1)}) [${this.p.width}x${this.p.height}]`)
+    // Debug logging for coordinate mapping issues
+    if (mappedX > canvasWidth * 1.5 || mappedY > canvasHeight * 1.5) {
+      console.warn(`[P5Animation] Suspicious coordinate mapping:`)
+      console.warn(`  Input: (${x}, ${y}) from camera ${cameraWidth}x${cameraHeight}`)
+      console.warn(`  Canvas: ${canvasWidth}x${canvasHeight}`)
+      console.warn(`  Mapped: (${mappedX.toFixed(1)}, ${mappedY.toFixed(1)})`)
+      console.warn(`  Clamped: (${clampedX.toFixed(1)}, ${clampedY.toFixed(1)})`)
     }
     
     return { x: clampedX, y: clampedY }
@@ -141,25 +196,20 @@ class P5Animation {
     // Store actual video dimensions, with fallbacks
     this.videoWidth = videoWidth || 320
     this.videoHeight = videoHeight || 240
+      console.log('[P5Animation] Using video dimensions:', this.videoWidth, 'x', this.videoHeight)
     
-    console.log('[P5Animation] Using video dimensions:', this.videoWidth, 'x', this.videoHeight)// Trigger effects based on movements
-    if (movements.leftHandRaised) {
-      this.triggerEffect('leftHand', poses[0])
+    // Update wrist cursors with current pose data
+    this.updateWristCursors(poses)
+      // Trigger effects based on movements (only if we have poses)
+    if (poses && poses.length > 0) {
+      if (movements.leftHandRaised) {
+        this.triggerEffect('leftHand', poses[0])
+      }
+        if (movements.rightHandRaised) {
+        this.triggerEffect('rightHand', poses[0])
+      }
     }
-    
-    if (movements.rightHandRaised) {
-      this.triggerEffect('rightHand', poses[0])
-    }
-    
-    if (movements.bothHandsUp) {
-      this.triggerEffect('bothHands', poses[0])
-    }
-    
-    if (movements.bodyMovement > 0.3) {
-      this.triggerEffect('bodyMovement', poses[0], movements.bodyMovement)
-    }
-  }
-  /**
+  }/**
    * Trigger visual effect based on movement type
    * @param {string} effectType - Type of effect to trigger
    * @param {Object} pose - Pose data for positioning
@@ -168,12 +218,19 @@ class P5Animation {
   triggerEffect(effectType, pose, intensity = 1) {
     if (!pose || !this.p) return
 
+    // Rate limiting - prevent too frequent effects
+    const now = Date.now()
+    if (now - this.lastEffectTime[effectType] < this.effectCooldown) {
+      return // Skip this effect to prevent overwhelming
+    }
+    this.lastEffectTime[effectType] = now
+
     const p = this.p
     const colors = this.settings.colorPalette[this.currentTheme] || this.settings.colorPalette.particles
 
     switch (effectType) {      case 'leftHand':
         const leftWrist = pose.keypoints.find(kp => kp.name === 'left_wrist')
-        if (leftWrist && leftWrist.score > 0.2) {  // Lowered from 0.3 to 0.2
+        if (leftWrist && leftWrist.score > 0.25) {  // Increased from 0.2 to 0.25
           const mapped = this.mapPoseToCanvas(leftWrist.x, leftWrist.y, this.videoWidth, this.videoHeight)
           console.log(`[P5Animation] Creating left hand effect at (${mapped.x.toFixed(1)}, ${mapped.y.toFixed(1)})`)
           this.createParticlesBurst(mapped.x, mapped.y, colors[0], 10)
@@ -184,38 +241,13 @@ class P5Animation {
 
       case 'rightHand':
         const rightWrist = pose.keypoints.find(kp => kp.name === 'right_wrist')
-        if (rightWrist && rightWrist.score > 0.2) {  // Lowered from 0.3 to 0.2
+        if (rightWrist && rightWrist.score > 0.25) {  // Increased from 0.2 to 0.25
           const mapped = this.mapPoseToCanvas(rightWrist.x, rightWrist.y, this.videoWidth, this.videoHeight)
           console.log(`[P5Animation] Creating right hand effect at (${mapped.x.toFixed(1)}, ${mapped.y.toFixed(1)})`)
           this.createParticlesBurst(mapped.x, mapped.y, colors[1], 10)
         } else {
           console.log(`[P5Animation] Right wrist not suitable for effect - score: ${rightWrist?.score?.toFixed(2) || 'N/A'}`)
-        }
-        break
-
-      case 'bothHands':
-        const leftW = pose.keypoints.find(kp => kp.name === 'left_wrist')
-        const rightW = pose.keypoints.find(kp => kp.name === 'right_wrist')
-        if (leftW && rightW && leftW.score > 0.2 && rightW.score > 0.2) {  // Lowered from 0.3 to 0.2
-          const leftMapped = this.mapPoseToCanvas(leftW.x, leftW.y, this.videoWidth, this.videoHeight)
-          const rightMapped = this.mapPoseToCanvas(rightW.x, rightW.y, this.videoWidth, this.videoHeight)
-          const centerX = (leftMapped.x + rightMapped.x) / 2
-          const centerY = (leftMapped.y + rightMapped.y) / 2
-          
-          this.createRipple(centerX, centerY, colors[2])
-          this.createParticlesBurst(leftMapped.x, leftMapped.y, colors[0], 15)
-          this.createParticlesBurst(rightMapped.x, rightMapped.y, colors[1], 15)
-        }
-        break
-
-      case 'bodyMovement':
-        const nose = pose.keypoints.find(kp => kp.name === 'nose')
-        if (nose && nose.score > 0.3) {
-          const mapped = this.mapPoseToCanvas(nose.x, nose.y, this.videoWidth, this.videoHeight)
-          const particleCount = Math.floor(intensity * 8)
-          this.createParticlesBurst(mapped.x, mapped.y, colors[3], particleCount)
-        }
-        break
+        }        break
     }
   }
   /**
@@ -224,15 +256,11 @@ class P5Animation {
    * @param {number} y - Y position
    * @param {Array} color - RGB color array
    * @param {number} count - Number of particles to create
-   */
-  createParticlesBurst(x, y, color, count) {
-    // Add boundary checking and logging
+   */  createParticlesBurst(x, y, color, count) {    // Add boundary checking
     if (!this.p) {
       console.warn('[P5Animation] p5 instance not available')
       return
     }
-    
-    console.log(`[P5Animation] Creating ${count} particles at (${x.toFixed(1)}, ${y.toFixed(1)}) on canvas ${this.p.width}x${this.p.height}`)
     
     // Ensure coordinates are within valid bounds
     if (x < 0 || x > this.p.width || y < 0 || y > this.p.height) {
@@ -254,7 +282,6 @@ class P5Animation {
         })
       }
     }
-    console.log(`[P5Animation] Total particles: ${this.particles.length}`)
   }
 
   /**
@@ -433,6 +460,119 @@ class P5Animation {
         this.ripples.splice(i, 1)
       }
     }
+  }
+
+  /**
+   * Update wrist cursor positions based on current poses
+   * @param {Array} poses - Array of detected poses
+   */
+  updateWristCursors(poses) {
+    if (!poses || poses.length === 0) {
+      // Fade out cursors when no poses detected
+      this.wristCursors.left.visible = false
+      this.wristCursors.right.visible = false
+      this.wristCursors.left.alpha = Math.max(0, this.wristCursors.left.alpha - 0.05)
+      this.wristCursors.right.alpha = Math.max(0, this.wristCursors.right.alpha - 0.05)
+      return
+    }
+
+    const pose = poses[0]
+    const leftWrist = pose.keypoints.find(kp => kp.name === 'left_wrist')
+    const rightWrist = pose.keypoints.find(kp => kp.name === 'right_wrist')
+
+    // Update left wrist cursor
+    if (leftWrist && leftWrist.score > 0.25) {
+      const mapped = this.mapPoseToCanvas(leftWrist.x, leftWrist.y, this.videoWidth, this.videoHeight)
+      this.wristCursors.left.targetX = mapped.x
+      this.wristCursors.left.targetY = mapped.y
+      
+      // If cursor was not visible before, instantly set position to prevent jumping
+      if (!this.wristCursors.left.visible || this.wristCursors.left.alpha <= 0) {
+        this.wristCursors.left.x = mapped.x
+        this.wristCursors.left.y = mapped.y
+      }
+      
+      this.wristCursors.left.visible = true
+      this.wristCursors.left.alpha = Math.min(1, this.wristCursors.left.alpha + 0.1)
+    } else {
+      this.wristCursors.left.visible = false
+      this.wristCursors.left.alpha = Math.max(0, this.wristCursors.left.alpha - 0.05)
+    }
+
+    // Update right wrist cursor
+    if (rightWrist && rightWrist.score > 0.25) {
+      const mapped = this.mapPoseToCanvas(rightWrist.x, rightWrist.y, this.videoWidth, this.videoHeight)
+      this.wristCursors.right.targetX = mapped.x
+      this.wristCursors.right.targetY = mapped.y
+      
+      // If cursor was not visible before, instantly set position to prevent jumping
+      if (!this.wristCursors.right.visible || this.wristCursors.right.alpha <= 0) {
+        this.wristCursors.right.x = mapped.x
+        this.wristCursors.right.y = mapped.y
+      }
+      
+      this.wristCursors.right.visible = true
+      this.wristCursors.right.alpha = Math.min(1, this.wristCursors.right.alpha + 0.1)
+    } else {
+      this.wristCursors.right.visible = false
+      this.wristCursors.right.alpha = Math.max(0, this.wristCursors.right.alpha - 0.05)
+    }
+
+    // Smooth interpolation to prevent ghosting and ensure smooth movement
+    const leftCursor = this.wristCursors.left
+    leftCursor.x += (leftCursor.targetX - leftCursor.x) * leftCursor.smoothness
+    leftCursor.y += (leftCursor.targetY - leftCursor.y) * leftCursor.smoothness
+    
+    const rightCursor = this.wristCursors.right
+    rightCursor.x += (rightCursor.targetX - rightCursor.x) * rightCursor.smoothness
+    rightCursor.y += (rightCursor.targetY - rightCursor.y) * rightCursor.smoothness
+  }
+
+  /**
+   * Draw distinct, smooth wrist cursors with high visibility
+   */  drawWristCursors() {
+    if (!this.p || !this.showWristCursors) return
+
+    const p = this.p
+
+    // Draw left wrist cursor - Simple magenta circle
+    if (this.wristCursors.left.alpha > 0) {
+      const cursor = this.wristCursors.left
+      
+      // Use integer positions to prevent sub-pixel rendering and ghosting
+      const x = Math.round(cursor.x)
+      const y = Math.round(cursor.y)
+      
+      p.push()
+      p.noStroke()
+      p.fill(255, 0, 255, cursor.alpha * 200) // Semi-transparent bright magenta
+      p.ellipse(x, y, 16, 16)
+      p.pop()
+    }
+
+    // Draw right wrist cursor - Simple cyan circle
+    if (this.wristCursors.right.alpha > 0) {
+      const cursor = this.wristCursors.right
+      
+      // Use integer positions to prevent sub-pixel rendering and ghosting
+      const x = Math.round(cursor.x)
+      const y = Math.round(cursor.y)
+      
+      p.push()
+      p.noStroke()
+      p.fill(0, 255, 255, cursor.alpha * 200) // Semi-transparent bright cyan
+      p.ellipse(x, y, 16, 16)
+      p.pop()
+    }
+  }
+
+  /**
+   * Set wrist cursor visibility
+   * @param {boolean} visible - Whether to show wrist cursors
+   */
+  setWristCursorsVisible(visible) {
+    this.showWristCursors = visible
+    console.log('[P5Animation] Wrist cursors', visible ? 'enabled' : 'disabled')
   }
 
   /**

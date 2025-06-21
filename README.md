@@ -76,7 +76,6 @@ The app currently detects:
 - **Left Hand Raised**: Left hand positioned above head level
 - **Right Hand Raised**: Right hand positioned above head level  
 - **Both Hands Up**: Both hands raised simultaneously above head
-- **Body Movement**: General movement and activity level
 
 ## Project Structure
 

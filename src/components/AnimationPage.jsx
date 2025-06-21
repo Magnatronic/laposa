@@ -4,7 +4,7 @@ import PoseDetector from '../services/PoseDetector'
 import P5Animation from '../services/P5Animation'
 import './AnimationPage.css'
 
-const AnimationPage = ({ onBackToCalibration, debugMode }) => {
+const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'particles', debugMode = false }) => {
   // Camera and pose detection state
   const webcamRef = useRef(null)
   const p5ContainerRef = useRef(null)
@@ -21,10 +21,11 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
     // Movement tracking for animations
   const [currentMovements, setCurrentMovements] = useState({
     leftHandRaised: false,
-    rightHandRaised: false,
-    bothHandsUp: false,
-    bodyMovement: 0 // 0-1 scale of overall body movement
+    rightHandRaised: false
   })
+
+  // Debug controls
+  const [showWristCursors, setShowWristCursors] = useState(true)
 
   console.log('[AnimationPage] State:', {
     cameraReady,
@@ -51,9 +52,7 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
     }
 
     initializePoseDetection()
-  }, [])
-
-  // Initialize P5 animation when container is ready
+  }, [])  // Initialize P5 animation when container is ready
   useEffect(() => {
     if (p5ContainerRef.current && !p5Animation) {
       console.log('[AnimationPage] Initializing P5 animation...')
@@ -78,6 +77,13 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
     }
   }, [animationTheme, p5Animation])
 
+  // Update wrist cursor visibility when toggle changes
+  useEffect(() => {
+    if (p5Animation) {
+      p5Animation.setWristCursorsVisible(showWristCursors)
+    }
+  }, [showWristCursors, p5Animation])
+
   // Start pose detection loop when both camera and model are ready
   useEffect(() => {
     if (!cameraReady || !modelLoaded || !poseDetector) return
@@ -100,10 +106,8 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
             
             console.log('[AnimationPage] Video dimensions:', videoWidth, 'x', videoHeight)
             p5Animation.updateMovements(movements, poses, videoWidth, videoHeight)
-          }
-          
-          // Update last movement time if any movement detected
-          if (movements.leftHandRaised || movements.rightHandRaised || movements.bothHandsUp || movements.bodyMovement > 0.1) {
+          }          // Update last movement time if any movement detected
+          if (movements.leftHandRaised || movements.rightHandRaised) {
             setLastMovementTime(Date.now())
           }
           
@@ -117,13 +121,10 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
     return () => clearInterval(intervalId)
   }, [cameraReady, modelLoaded, poseDetector, p5Animation, isPlaying])
   // Analyze detected poses for various movements
-  const analyzePosesForMovements = (poses) => {
-    if (poses.length === 0) {
+  const analyzePosesForMovements = (poses) => {    if (poses.length === 0) {
       return {
         leftHandRaised: false,
-        rightHandRaised: false,
-        bothHandsUp: false,
-        bodyMovement: 0
+        rightHandRaised: false
       }
     }
 
@@ -145,49 +146,115 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
       headY = nose.y
     } else if (leftEar && rightEar && leftEar.score > 0.3 && rightEar.score > 0.3) {
       headY = (leftEar.y + rightEar.y) / 2
-    }    // Check for left hand raised above head
-    const leftHandRaised = leftWrist && headY && 
-      leftWrist.score > 0.2 && leftWrist.y < headY - 20  // Lowered threshold and height requirement
+    }    // Enhanced filtering system to prevent false hand detections
+    const videoWidth = 320;
+    const videoHeight = 240;
+    
+    let filteredLeftWrist = leftWrist
+    let filteredRightWrist = rightWrist
+    
+    // Initial confidence filter
+    if (filteredLeftWrist && filteredLeftWrist.score <= 0.25) filteredLeftWrist = null
+    if (filteredRightWrist && filteredRightWrist.score <= 0.25) filteredRightWrist = null
+    
+    // Apply multiple filtering strategies when both hands are detected
+    if (filteredLeftWrist && filteredRightWrist) {
+      const distance = Math.sqrt(
+        Math.pow(filteredLeftWrist.x - filteredRightWrist.x, 2) + 
+        Math.pow(filteredLeftWrist.y - filteredRightWrist.y, 2)
+      )
+      
+      // Filter 1: Proximity filter - hands too close together
+      if (distance < 50) {
+        console.log(`🔍 Hands too close (${distance.toFixed(1)}px), filtering lower confidence`)
+        if (filteredLeftWrist.score > filteredRightWrist.score) {
+          console.log(`   Keeping left hand (conf: ${filteredLeftWrist.score.toFixed(3)})`)
+          filteredRightWrist = null
+        } else {
+          console.log(`   Keeping right hand (conf: ${filteredRightWrist.score.toFixed(3)})`)
+          filteredLeftWrist = null
+        }
+      }
+      // Filter 2: Anatomical constraint - hands at opposite vertical extremes
+      else {
+        const topThreshold = videoHeight * 0.15; // Top 15% of frame
+        const bottomThreshold = videoHeight * 0.85; // Bottom 15% of frame
+        
+        const leftAtTop = filteredLeftWrist.y < topThreshold;
+        const leftAtBottom = filteredLeftWrist.y > bottomThreshold;
+        const rightAtTop = filteredRightWrist.y < topThreshold;
+        const rightAtBottom = filteredRightWrist.y > bottomThreshold;
+        
+        // Check for anatomically unlikely configurations
+        if ((leftAtTop && rightAtBottom) || (rightAtTop && leftAtBottom)) {
+          console.log(`🚫 Anatomically unlikely: hands at opposite extremes`)
+          console.log(`   Left: y=${filteredLeftWrist.y.toFixed(1)} (${leftAtTop ? 'top' : leftAtBottom ? 'bottom' : 'middle'})`)
+          console.log(`   Right: y=${filteredRightWrist.y.toFixed(1)} (${rightAtTop ? 'top' : rightAtBottom ? 'bottom' : 'middle'})`)
+          
+          // Keep the hand with higher confidence
+          if (filteredLeftWrist.score > filteredRightWrist.score) {
+            console.log(`   Keeping left hand (higher confidence: ${filteredLeftWrist.score.toFixed(3)})`)
+            filteredRightWrist = null
+          } else {
+            console.log(`   Keeping right hand (higher confidence: ${filteredRightWrist.score.toFixed(3)})`)
+            filteredLeftWrist = null
+          }
+        }
+      }
+    }
+    
+    // Filter 3: Edge detection filter - remove low confidence detections near frame edges
+    const edgeThreshold = 10; // Pixels from edge
+    const edgeConfidenceThreshold = 0.4; // Higher threshold for edge detections
+    
+    if (filteredLeftWrist) {
+      const nearEdge = filteredLeftWrist.x < edgeThreshold || 
+                      filteredLeftWrist.x > (videoWidth - edgeThreshold) ||
+                      filteredLeftWrist.y < edgeThreshold || 
+                      filteredLeftWrist.y > (videoHeight - edgeThreshold);
+      
+      if (nearEdge && filteredLeftWrist.score < edgeConfidenceThreshold) {
+        console.log(`🚫 Left hand filtered: near edge with low confidence (${filteredLeftWrist.score.toFixed(3)})`)
+        filteredLeftWrist = null
+      }
+    }
+    
+    if (filteredRightWrist) {
+      const nearEdge = filteredRightWrist.x < edgeThreshold || 
+                      filteredRightWrist.x > (videoWidth - edgeThreshold) ||
+                      filteredRightWrist.y < edgeThreshold || 
+                      filteredRightWrist.y > (videoHeight - edgeThreshold);
+      
+      if (nearEdge && filteredRightWrist.score < edgeConfidenceThreshold) {
+        console.log(`🚫 Right hand filtered: near edge with low confidence (${filteredRightWrist.score.toFixed(3)})`)
+        filteredRightWrist = null
+      }
+    }
+
+    // Check for left hand raised above head
+    const leftHandRaised = filteredLeftWrist && headY && 
+      filteredLeftWrist.score > 0.25 && filteredLeftWrist.y < headY - 20  // Increased threshold for better accuracy
 
     // Check for right hand raised above head
-    const rightHandRaised = rightWrist && headY && 
-      rightWrist.score > 0.2 && rightWrist.y < headY - 20  // Lowered threshold and height requirement
-
-    // Check for both hands up
-    const bothHandsUp = leftHandRaised && rightHandRaised
-
-    // Debug: log wrist detection
-    if (leftWrist && leftWrist.score > 0.1) {
-      console.log(`[AnimationPage] Left wrist detected: score=${leftWrist.score.toFixed(2)}, pos=(${leftWrist.x.toFixed(1)}, ${leftWrist.y.toFixed(1)}), headY=${headY?.toFixed(1)}, raised=${leftHandRaised}`)
+    const rightHandRaised = filteredRightWrist && headY && 
+      filteredRightWrist.score > 0.25 && filteredRightWrist.y < headY - 20  // Increased threshold for better accuracy    // Debug: log final filtered wrist detections
+    if (filteredLeftWrist) {
+      console.log(`👈 Left wrist (filtered): score=${filteredLeftWrist.score.toFixed(3)}, pos=(${filteredLeftWrist.x.toFixed(1)}, ${filteredLeftWrist.y.toFixed(1)}), headY=${headY?.toFixed(1)}, raised=${leftHandRaised}`)
     }
-    if (rightWrist && rightWrist.score > 0.1) {
-      console.log(`[AnimationPage] Right wrist detected: score=${rightWrist.score.toFixed(2)}, pos=(${rightWrist.x.toFixed(1)}, ${rightWrist.y.toFixed(1)}), headY=${headY?.toFixed(1)}, raised=${rightHandRaised}`)
-    }    // Calculate overall body movement (simplified)
-    let bodyMovement = 0
-    if (nose && leftShoulder && rightShoulder) {
-      // This is a simplified movement calculation
-      // In a real implementation, you'd track movement over time
-      const shoulderWidth = Math.abs(leftShoulder.x - rightShoulder.x)
-      const headPosition = nose.y
-      
-      // Normalize movement based on pose confidence and position changes
-      bodyMovement = Math.min(1, (shoulderWidth / 200) * 0.5 + 
-        (headPosition < 200 ? 0.3 : 0)) // Higher movement if head is higher
-    }
+    if (filteredRightWrist) {
+      console.log(`👉 Right wrist (filtered): score=${filteredRightWrist.score.toFixed(3)}, pos=(${filteredRightWrist.x.toFixed(1)}, ${filteredRightWrist.y.toFixed(1)}), headY=${headY?.toFixed(1)}, raised=${rightHandRaised}`)    }
 
     // For testing: if wrists are detected but not raised, still trigger some hand effects
-    const leftHandDetected = leftWrist && leftWrist.score > 0.2
-    const rightHandDetected = rightWrist && rightWrist.score > 0.2
+    const leftHandDetected = filteredLeftWrist && filteredLeftWrist.score > 0.25
+    const rightHandDetected = filteredRightWrist && filteredRightWrist.score > 0.25
     
     // Use detected hands even if not raised for testing
     const testLeftHand = leftHandDetected && !leftHandRaised
     const testRightHand = rightHandDetected && !rightHandRaised
-
+    
     return {
       leftHandRaised: leftHandRaised || testLeftHand,  // Include test cases
-      rightHandRaised: rightHandRaised || testRightHand,  // Include test cases
-      bothHandsUp,
-      bodyMovement
+      rightHandRaised: rightHandRaised || testRightHand  // Include test cases
     }
   }
 
@@ -204,6 +271,10 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
   const changeTheme = (newTheme) => {
     console.log('[AnimationPage] Changing theme to:', newTheme)
     setAnimationTheme(newTheme)
+  }
+  const toggleWristCursors = () => {
+    setShowWristCursors(!showWristCursors)
+    console.log('[AnimationPage] Wrist cursors', !showWristCursors ? 'enabled' : 'disabled')
   }
 
   return (
@@ -272,38 +343,34 @@ const AnimationPage = ({ onBackToCalibration, debugMode }) => {
             <span>Tracking {currentPoses.length} person{currentPoses.length !== 1 ? 's' : ''}</span>
           </div>
         </div>
-      </div>      {/* Movement indicators */}
+      </div>        {/* Movement indicators */}
       <div className="movement-indicators">
         <div className={`indicator ${currentMovements.leftHandRaised ? 'active' : ''}`}>
-          <span className="indicator-icon">�‍♀️</span>
-          <span className="indicator-label">Left Raised</span>
+          <span className="indicator-icon">✋</span>
+          <span className="indicator-label">Left Hand</span>
         </div>
         
         <div className={`indicator ${currentMovements.rightHandRaised ? 'active' : ''}`}>
-          <span className="indicator-icon">�‍♂️</span>
-          <span className="indicator-label">Right Raised</span>
+          <span className="indicator-icon">🤚</span>
+          <span className="indicator-label">Right Hand</span>
         </div>
-        
-        <div className={`indicator ${currentMovements.bothHandsUp ? 'active' : ''}`}>
-          <span className="indicator-icon">🙌</span>
-          <span className="indicator-label">Both Hands</span>
-        </div>
-        
-        <div className={`indicator ${currentMovements.bodyMovement > 0.3 ? 'active' : ''}`}>
-          <span className="indicator-icon">💃</span>
-          <span className="indicator-label">Body Movement</span>
-        </div>
-      </div>
-
-      {/* Debug information */}
+      </div>      {/* Debug information */}
       {debugMode && (
         <div className="debug-info">
           <h4>Debug Information</h4>
+          <div className="debug-controls">
+            <button 
+              onClick={toggleWristCursors}
+              className={`debug-toggle ${showWristCursors ? 'active' : ''}`}
+            >
+              {showWristCursors ? '👁️ Hide Wrist Cursors' : '👁️‍🗨️ Show Wrist Cursors'}
+            </button>
+          </div>
           <div className="debug-grid">
             <div>Poses: {currentPoses.length}</div>
             <div>Theme: {animationTheme}</div>
             <div>Playing: {isPlaying ? 'Yes' : 'No'}</div>
-            <div>Body Movement: {(currentMovements.bodyMovement * 100).toFixed(1)}%</div>
+            <div>Wrist Cursors: {showWristCursors ? 'On' : 'Off'}</div>
             <div>Last Movement: {Math.round((Date.now() - lastMovementTime) / 1000)}s ago</div>
           </div>
         </div>
