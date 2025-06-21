@@ -61,11 +61,8 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
         try {
           const poses = await poseDetector.detectPoses(webcamRef.current.video)
           setCurrentPoses(poses)
-          
-          // Draw poses for debugging
-          if (debugMode) {
-            drawPoses(poses)
-          }
+            // Always draw poses for user feedback
+          drawPoses(poses)
           
           // Analyze poses for movement detection
           analyzePosesForMovements(poses)
@@ -128,8 +125,7 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
         }
       }
     }
-  }
-  // Draw pose keypoints on canvas for user feedback
+  }  // Draw pose keypoints on canvas for user feedback
   const drawPoses = (poses) => {
     const canvas = canvasRef.current
     if (!canvas) return
@@ -152,40 +148,72 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
             ctx.fillStyle = '#44ff44' // Green for center (nose, etc.)
           }
           
-          // Draw keypoint circle
+          // Draw larger keypoint circles for better visibility
           ctx.beginPath()
-          ctx.arc(keypoint.x, keypoint.y, 6, 0, 2 * Math.PI)
+          ctx.arc(keypoint.x, keypoint.y, 8, 0, 2 * Math.PI)
           ctx.fill()
           
-          // Add white outline for visibility
+          // Add thick white outline for maximum visibility
           ctx.strokeStyle = 'white'
-          ctx.lineWidth = 2
+          ctx.lineWidth = 3
           ctx.stroke()
           
-          // Always show labels for key body parts (not just in debug mode)
+          // Always show labels for key body parts for user feedback
           if (['nose', 'left_wrist', 'right_wrist', 'left_shoulder', 'right_shoulder'].includes(keypoint.name)) {
-            ctx.fillStyle = 'white'
-            ctx.strokeStyle = 'black'
-            ctx.lineWidth = 3
-            ctx.font = 'bold 14px Arial'
+            ctx.font = 'bold 16px Arial'
             
-            // Add text background for better readability
+            // Add highly visible text with strong background
             const text = keypoint.name.replace('_', ' ')
             const textWidth = ctx.measureText(text).width
-            const textX = keypoint.x + 10
-            const textY = keypoint.y - 10
+            const textX = keypoint.x + 12
+            const textY = keypoint.y - 12
             
-            // Draw text background
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'
-            ctx.fillRect(textX - 2, textY - 16, textWidth + 4, 20)
+            // Draw strong black background for text
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)'
+            ctx.fillRect(textX - 4, textY - 20, textWidth + 8, 24)
             
-            // Draw text with outline
+            // Draw text with thick outline for maximum contrast
+            ctx.strokeStyle = 'black'
+            ctx.lineWidth = 4
             ctx.strokeText(text, textX, textY)
             ctx.fillStyle = 'white'
             ctx.fillText(text, textX, textY)
           }
         }
       })
+      
+      // Add real-time movement feedback overlay
+      const leftWrist = pose.keypoints.find(kp => kp.name === 'left_wrist')
+      const rightWrist = pose.keypoints.find(kp => kp.name === 'right_wrist')
+      const nose = pose.keypoints.find(kp => kp.name === 'nose')
+      
+      if (leftWrist && rightWrist && nose && leftWrist.score > 0.3 && rightWrist.score > 0.3 && nose.score > 0.3) {
+        // Check for raised hands and show immediate visual feedback
+        const leftRaised = leftWrist.y < nose.y - 50
+        const rightRaised = rightWrist.y < nose.y - 50
+        
+        if (leftRaised || rightRaised) {
+          ctx.font = 'bold 24px Arial'
+          
+          const message = leftRaised && rightRaised ? 'BOTH HANDS UP!' : 
+                         leftRaised ? 'LEFT HAND UP!' : 'RIGHT HAND UP!'
+          
+          const textWidth = ctx.measureText(message).width
+          const x = (canvas.width - textWidth) / 2
+          const y = 60
+          
+          // Background rectangle
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.8)'
+          ctx.fillRect(x - 15, y - 35, textWidth + 30, 45)
+          
+          // Text with outline
+          ctx.strokeStyle = 'black'
+          ctx.lineWidth = 3
+          ctx.strokeText(message, x, y)
+          ctx.fillStyle = '#00ff00'
+          ctx.fillText(message, x, y)
+        }
+      }
     })
   }
   
