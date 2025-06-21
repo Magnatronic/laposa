@@ -1,0 +1,108 @@
+# Workflow for deploying tablet-testing branch to a subdirectory
+name: Deploy Tablet Testing to Pages Subdirectory
+
+on:
+  # Runs on pushes targeting the tablet-testing branch
+  push:
+    branches: ['tablet-testing']
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets the GITHUB_TOKEN permissions to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # Build and deploy to subdirectory
+  deploy-subdirectory:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tablet-testing
+        uses: actions/checkout@v4
+        with:
+          ref: tablet-testing
+        
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build with subdirectory base
+        run: npm run build
+        env:
+          VITE_BASE_PATH: '/laposa/tablet-testing/'
+        
+      - name: Checkout main branch for Pages structure
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: main-content
+          
+      - name: Setup main build
+        working-directory: ./main-content
+        run: |
+          npm ci
+          npm run build
+          
+      - name: Create combined Pages structure
+        run: |
+          # Create the combined directory structure
+          mkdir -p combined-site/tablet-testing
+          
+          # Copy main site to root
+          cp -r main-content/dist/* combined-site/
+          
+          # Copy tablet-testing build to subdirectory
+          cp -r dist/* combined-site/tablet-testing/
+          
+          # Create a simple index page that links to both
+          cat > combined-site/versions.html << 'EOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Laposa - Version Selection</title>
+            <style>
+              body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+              .version { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+              .version h2 { margin: 0 0 10px 0; }
+              .version a { color: #0066cc; text-decoration: none; font-weight: bold; }
+              .version a:hover { text-decoration: underline; }
+              .badge { background: #e1f5fe; color: #01579b; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+              .new { background: #e8f5e8; color: #2e7d32; }
+            </style>
+          </head>
+          <body>
+            <h1>Laposa Movement Tracking</h1>
+            <p>Choose which version you'd like to access:</p>
+            
+            <div class="version">
+              <h2><a href="./">Main Version</a> <span class="badge">Stable</span></h2>
+              <p>The main production version - fully tested and stable.</p>
+            </div>
+            
+            <div class="version">
+              <h2><a href="./tablet-testing/">Tablet Testing Version</a> <span class="badge new">Beta</span></h2>
+              <p>Tablet-optimized version with touch-friendly interface, landscape layout, and enhanced wrist cursors.</p>
+            </div>
+          </body>
+          </html>
+          EOF
+        
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './combined-site'
+          
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
