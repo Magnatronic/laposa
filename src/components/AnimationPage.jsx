@@ -25,9 +25,9 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
   })
   // Debug controls
   const [showWristCursors, setShowWristCursors] = useState(true)
-  
-  // Panel controls
+    // Panel controls
   const [isPanelOpen, setIsPanelOpen] = useState(true)
+  const [showCameraFeed, setShowCameraFeed] = useState(false)
 
   console.log('[AnimationPage] State:', {
     cameraReady,
@@ -279,35 +279,73 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
     setShowWristCursors(!showWristCursors)
     console.log('[AnimationPage] Wrist cursors', !showWristCursors ? 'enabled' : 'disabled')
   }
-
   const togglePanel = () => {
     setIsPanelOpen(!isPanelOpen)
     console.log('[AnimationPage] Panel', !isPanelOpen ? 'opened' : 'closed')
   }
+
+  const toggleCameraFeed = () => {
+    setShowCameraFeed(!showCameraFeed)
+    console.log('[AnimationPage] Camera feed', !showCameraFeed ? 'shown' : 'hidden')
+  }
   return (
-    <div className="animation-page">
-      {/* Main content area with animation/camera */}
+    <div className="animation-page">      {/* Main content area with animation/camera */}
       <div className="main-content">
         {/* P5.js animation canvas - takes full screen */}
         <div 
           ref={p5ContainerRef}
           className="animation-canvas-container"
         />
+          {/* Collapsible Camera Feed Overlay */}
+        <div className={`camera-feed-overlay ${showCameraFeed ? 'visible' : 'hidden'}`}>
+          <div className="camera-feed-container">
+            <div className="camera-feed-header">
+              <span className="camera-feed-title">Camera View</span>
+              <button 
+                className="camera-close-button"
+                onClick={toggleCameraFeed}
+                aria-label="Hide camera feed"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="camera-feed-video">
+              {/* When camera feed is visible, show the actual camera */}
+              {showCameraFeed && (
+                <Webcam
+                  ref={webcamRef}
+                  audio={false}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={{
+                    width: 320,
+                    height: 240,
+                    facingMode: "user"
+                  }}
+                  onUserMedia={handleCameraReady}
+                  className="visible-webcam"
+                />
+              )}
+            </div>
+          </div>
+        </div>
         
-        {/* Hidden camera feed for pose detection */}
+        {/* Hidden camera feed for pose detection (used when overlay is hidden) */}
         <div className="hidden-camera">
-          <Webcam
-            ref={webcamRef}
-            audio={false}
-            screenshotFormat="image/jpeg"
-            videoConstraints={{
-              width: 320,
-              height: 240,
-              facingMode: "user"
-            }}
-            onUserMedia={handleCameraReady}
-            className="hidden-webcam"
-          />
+          {/* When camera feed is hidden, use the hidden camera for pose detection */}
+          {!showCameraFeed && (
+            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={{
+                width: 320,
+                height: 240,
+                facingMode: "user"
+              }}
+              onUserMedia={handleCameraReady}
+              className="hidden-webcam"
+            />
+          )}
         </div>
       </div>
 
@@ -346,9 +384,7 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
               <div>Camera: {cameraReady ? '✅ Ready' : '⏳ Loading...'}</div>
               <div>Model: {modelLoaded ? '✅ Loaded' : '⏳ Loading...'}</div>
             </div>
-          </div>
-
-          {/* Animation Controls */}
+          </div>          {/* Animation Controls */}
           <div className="controls-section">
             <h3>Animation Controls</h3>
             
@@ -367,12 +403,21 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
               </select>
             </div>
             
-            <button 
-              onClick={togglePlayPause}
-              className={`play-pause-button ${isPlaying ? 'playing' : 'paused'}`}
-            >
-              {isPlaying ? '⏸️ Pause Animation' : '▶️ Play Animation'}
-            </button>
+            <div className="control-buttons">
+              <button 
+                onClick={togglePlayPause}
+                className={`play-pause-button ${isPlaying ? 'playing' : 'paused'}`}
+              >
+                {isPlaying ? '⏸️ Pause Animation' : '▶️ Play Animation'}
+              </button>
+              
+              <button 
+                onClick={toggleCameraFeed}
+                className={`camera-toggle-button ${showCameraFeed ? 'active' : ''}`}
+              >
+                {showCameraFeed ? '📹 Hide Camera' : '👁️ Show Camera'}
+              </button>
+            </div>
           </div>
 
           {/* Movement Indicators */}
