@@ -15,15 +15,13 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
   const [leftHandRaisedDetected, setLeftHandRaisedDetected] = useState(false)
   const [rightHandRaisedDetected, setRightHandRaisedDetected] = useState(false)
   const [isCalibrated, setIsCalibrated] = useState(false)
-  
-  // Raise detection counters for validation
+    // Raise detection counters for validation
   const [leftRaiseCount, setLeftRaiseCount] = useState(0)
   const [rightRaiseCount, setRightRaiseCount] = useState(0)
   const REQUIRED_RAISE_COUNT = 3 // Number of raises needed to confirm detection
   
   // Control panel state
   const [isPanelExpanded, setIsPanelExpanded] = useState(true)
-  
   console.log('[CalibrationPage] State:', {
     cameraReady,
     modelLoaded,
@@ -61,32 +59,29 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
         try {
           const poses = await poseDetector.detectPoses(webcamRef.current.video)
           setCurrentPoses(poses)
+            // Analyze poses for hand-above-head detection
+          analyzePosesForHandRaises(poses)
           
-          // Draw poses for debugging
-          if (debugMode) {
+          // Draw poses on canvas if in debug mode
+          if (debugMode && canvasRef.current) {
             drawPoses(poses)
           }
-          
-          // Analyze poses for movement detection
-          analyzePosesForMovements(poses)
         } catch (error) {
           console.error('[CalibrationPage] Error detecting poses:', error)
         }
       }
     }
 
-    const intervalId = setInterval(detectPoses, 100) // Check every 100ms
+    const intervalId = setInterval(detectPoses, 100) // Run detection every 100ms
     return () => clearInterval(intervalId)
-  }, [cameraReady, modelLoaded, poseDetector, debugMode])
-
-  // Analyze detected poses for hand movements
-  const analyzePosesForMovements = (poses) => {
+  }, [cameraReady, modelLoaded, poseDetector, debugMode])  // Analyze detected poses for hand-above-head movements
+  const analyzePosesForHandRaises = (poses) => {
     if (poses.length === 0) return
 
     const pose = poses[0] // Use first detected person
     const keypoints = pose.keypoints
 
-    // Get key body part positions
+    // Get hand positions (wrist keypoints) and head reference
     const leftWrist = keypoints.find(kp => kp.name === 'left_wrist')
     const rightWrist = keypoints.find(kp => kp.name === 'right_wrist')
     const nose = keypoints.find(kp => kp.name === 'nose')
@@ -99,9 +94,7 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
       headY = nose.y
     } else if (leftEar && rightEar && leftEar.score > 0.3 && rightEar.score > 0.3) {
       headY = (leftEar.y + rightEar.y) / 2
-    }
-
-    // Check for left hand above head
+    }    // Check for left hand above head
     if (leftWrist && headY && leftWrist.score > 0.3) {
       if (leftWrist.y < headY - 40) { // Hand is above head with 40px buffer
         if (!leftHandRaisedDetected) {
@@ -155,17 +148,13 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
       })
     })
   }
-  
   // Check if calibration is complete
   useEffect(() => {
-    const calibrationComplete = leftRaiseCount >= REQUIRED_RAISE_COUNT && rightRaiseCount >= REQUIRED_RAISE_COUNT
-    if (calibrationComplete !== isCalibrated) {
-      setIsCalibrated(calibrationComplete)
-      if (calibrationComplete) {
-        console.log('[CalibrationPage] Calibration completed successfully!')
-      }
+    if (leftRaiseCount >= REQUIRED_RAISE_COUNT && rightRaiseCount >= REQUIRED_RAISE_COUNT) {
+      setIsCalibrated(true)
+      console.log('[CalibrationPage] Calibration complete!')
     }
-  }, [leftRaiseCount, rightRaiseCount, isCalibrated])
+  }, [leftRaiseCount, rightRaiseCount])
 
   const handleCameraReady = () => {
     console.log('[CalibrationPage] Camera is ready')
@@ -185,140 +174,119 @@ const CalibrationPage = ({ onCalibrationComplete, debugMode }) => {
 
   return (
     <div className="calibration-page">
-      {/* Full-height camera section */}
-      <div className="camera-section">
-        <div className="camera-container">
-          <Webcam
-            ref={webcamRef}
-            audio={false}
-            screenshotFormat="image/jpeg"
-            videoConstraints={{
-              width: { ideal: 640, max: 1280 },
-              height: { ideal: 480, max: 720 },
-              facingMode: "user",
-              aspectRatio: 4/3
-            }}
-            onUserMedia={handleCameraReady}
-            className="webcam-feed"
-          />
-          
-          {/* Debug canvas overlay */}
-          {debugMode && (
-            <canvas
-              ref={canvasRef}
-              width={640}
-              height={480}
-              className="pose-canvas"
+      <div className="calibration-header">
+        <h2>Camera Calibration & Movement Testing</h2>
+        <p>Position yourself so your full body is visible in the camera feed below. We'll test if the system can detect when you raise your hands above your head.</p>
+      </div>
+
+      <div className="calibration-content">
+        {/* Camera feed section */}
+        <div className="camera-section">
+          <div className="camera-container">            <Webcam
+              ref={webcamRef}
+              audio={false}
+              screenshotFormat="image/jpeg"
+              videoConstraints={{
+                width: { ideal: 640, max: 1280 },
+                height: { ideal: 480, max: 720 },
+                facingMode: "user",
+                aspectRatio: 4/3
+              }}
+              onUserMedia={handleCameraReady}
+              className="webcam-feed"
             />
-          )}
-          
-          {/* Camera status overlay */}
-          <div className="camera-status">
-            <div className={`status-indicator ${cameraReady ? 'ready' : 'loading'}`}>
-              Camera: {cameraReady ? 'Ready' : 'Loading...'}
-            </div>
-            <div className={`status-indicator ${modelLoaded ? 'ready' : 'loading'}`}>
-              AI Model: {modelLoaded ? 'Loaded' : 'Loading...'}
+              {/* Debug canvas overlay */}
+            {debugMode && (
+              <canvas
+                ref={canvasRef}
+                width={640}
+                height={480}
+                className="pose-canvas"
+              />
+            )}
+            
+            {/* Camera status overlay */}
+            <div className="camera-status">
+              <div className={`status-indicator ${cameraReady ? 'ready' : 'loading'}`}>
+                Camera: {cameraReady ? 'Ready' : 'Loading...'}
+              </div>
+              <div className={`status-indicator ${modelLoaded ? 'ready' : 'loading'}`}>
+                AI Model: {modelLoaded ? 'Loaded' : 'Loading...'}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Collapsible control panel */}
-      <div className={`control-panel ${isPanelExpanded ? 'expanded' : 'collapsed'}`}>
-        {/* Panel toggle button */}
-        <button 
-          onClick={togglePanel}
-          className="panel-toggle"
-          aria-label={isPanelExpanded ? 'Collapse panel' : 'Expand panel'}
-        >
-          {isPanelExpanded ? '⏸️' : '▶️'}
-        </button>
-
-        {/* Panel content */}
-        <div className="panel-content">
-          {/* Header section */}
-          <div className="panel-header">
-            <h2>Camera Calibration & Movement Testing</h2>
-            <p>Position yourself so your full body is visible in the camera feed. We'll test if the system can detect when you raise your hands above your head.</p>
-          </div>
-
-          {/* Movement tests */}
-          <div className="panel-section">
-            <h3>Movement Tests</h3>
+        {/* Movement testing section */}
+        <div className="testing-section">          <h3>Movement Tests</h3>
+          <p>Test the following movements to ensure the system can detect them:</p>
             <div className="movement-tests">
-              <div className={`test-card ${leftRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
-                <div className="test-icon">🙋‍♀️</div>
-                <h4>Left Hand Above Head</h4>
-                <p>Raise your left hand straight up above your head</p>
-                <div className="test-progress">
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill"
-                      style={{ width: `${(leftRaiseCount / REQUIRED_RAISE_COUNT) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="progress-text">
-                    {leftRaiseCount}/{REQUIRED_RAISE_COUNT} raises detected
-                  </span>
+            <div className={`test-card ${leftRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
+              <div className="test-icon">�‍♀️</div>
+              <h4>Left Hand Above Head</h4>
+              <p>Raise your left hand straight up above your head</p>
+              <div className="test-progress">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill"
+                    style={{ width: `${(leftRaiseCount / REQUIRED_RAISE_COUNT) * 100}%` }}
+                  ></div>
                 </div>
+                <span className="progress-text">
+                  {leftRaiseCount}/{REQUIRED_RAISE_COUNT} raises detected
+                </span>
               </div>
+            </div>
 
-              <div className={`test-card ${rightRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
-                <div className="test-icon">🙋‍♂️</div>
-                <h4>Right Hand Above Head</h4>
-                <p>Raise your right hand straight up above your head</p>
-                <div className="test-progress">
-                  <div className="progress-bar">
-                    <div 
-                      className="progress-fill"
-                      style={{ width: `${(rightRaiseCount / REQUIRED_RAISE_COUNT) * 100}%` }}
-                    ></div>
-                  </div>
-                  <span className="progress-text">
-                    {rightRaiseCount}/{REQUIRED_RAISE_COUNT} raises detected
-                  </span>
+            <div className={`test-card ${rightRaiseCount >= REQUIRED_RAISE_COUNT ? 'completed' : ''}`}>
+              <div className="test-icon">�‍♂️</div>
+              <h4>Right Hand Above Head</h4>
+              <p>Raise your right hand straight up above your head</p>
+              <div className="test-progress">
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill"
+                    style={{ width: `${(rightRaiseCount / REQUIRED_RAISE_COUNT) * 100}%` }}
+                  ></div>
                 </div>
+                <span className="progress-text">
+                  {rightRaiseCount}/{REQUIRED_RAISE_COUNT} raises detected
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Control buttons */}
-          <div className="panel-section">
-            <div className="calibration-controls">
-              <button 
-                onClick={resetCalibration}
-                className="reset-button"
-              >
-                Reset Tests
-              </button>
-              
-              <button 
-                onClick={onCalibrationComplete}
-                disabled={!isCalibrated}
-                className={`continue-button ${isCalibrated ? 'enabled' : 'disabled'}`}
-              >
-                {isCalibrated ? 'Start Animation!' : 'Complete Tests First'}
-              </button>
-            </div>
+          {/* Calibration controls */}
+          <div className="calibration-controls">
+            <button 
+              onClick={resetCalibration}
+              className="reset-button"
+            >
+              Reset Tests
+            </button>
+            
+            <button 
+              onClick={onCalibrationComplete}
+              disabled={!isCalibrated}
+              className={`continue-button ${isCalibrated ? 'enabled' : 'disabled'}`}
+            >
+              {isCalibrated ? 'Start Animation!' : 'Complete Tests First'}
+            </button>
           </div>
-
-          {/* Debug information */}
-          {debugMode && (
-            <div className="panel-section">
-              <div className="debug-info">
-                <h4>Debug Information</h4>
-                <div className="debug-grid">
-                  <div>Poses Detected: {currentPoses.length}</div>
-                  <div>Left Raises: {leftRaiseCount}</div>
-                  <div>Right Raises: {rightRaiseCount}</div>
-                  <div>Calibrated: {isCalibrated ? 'Yes' : 'No'}</div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Debug information */}
+      {debugMode && (
+        <div className="debug-info">
+          <h4>Debug Information</h4>
+          <div className="debug-grid">
+            <div>Poses Detected: {currentPoses.length}</div>            <div>Left Raises: {leftRaiseCount}</div>
+            <div>Right Raises: {rightRaiseCount}</div>
+            <div>Calibrated: {isCalibrated ? 'Yes' : 'No'}</div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

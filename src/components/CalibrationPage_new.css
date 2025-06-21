@@ -1,0 +1,367 @@
+/* Calibration Page Layout - Collapsible Panel Design */
+.calibration-page {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+/* Camera Section - Full Left Side */
+.camera-section {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  min-width: 0;
+}
+
+.camera-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100%;
+  height: 100%;
+  max-width: 640px;
+  max-height: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.webcam-feed {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pose-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Camera Status Overlay */
+.camera-status {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: white;
+}
+
+.status-indicator.ready {
+  background: rgba(76, 175, 80, 0.8);
+}
+
+.status-indicator.loading {
+  background: rgba(255, 152, 0, 0.8);
+}
+
+.status-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Collapsible Control Panel */
+.control-panel {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.control-panel.expanded {
+  width: 400px;
+}
+
+.control-panel.collapsed {
+  width: 60px;
+}
+
+/* Panel Toggle Button */
+.panel-toggle {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  background: rgba(100, 181, 246, 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel-toggle:hover {
+  background: rgba(100, 181, 246, 1);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Panel Content */
+.panel-content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  margin-left: 50px;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.control-panel.collapsed .panel-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Panel Sections */
+.panel-header {
+  margin-bottom: 2rem;
+}
+
+.panel-header h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.4rem;
+  color: #64b5f6;
+}
+
+.panel-header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.panel-section {
+  margin-bottom: 2rem;
+}
+
+.panel-section h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  color: #64b5f6;
+}
+
+.panel-section h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+/* Movement Tests */
+.movement-tests {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.test-card {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.test-card.completed {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.test-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.test-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.test-card h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+.test-card p {
+  margin: 0 0 1rem 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Progress Bar */
+.test-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #64b5f6, #42a5f5);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.progress-text {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+}
+
+/* Control Buttons */
+.calibration-controls {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.reset-button,
+.continue-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.reset-button {
+  background: rgba(255, 87, 87, 0.8);
+  color: white;
+}
+
+.reset-button:hover {
+  background: rgba(255, 87, 87, 1);
+  transform: translateY(-2px);
+}
+
+.continue-button.enabled {
+  background: linear-gradient(90deg, #64b5f6, #42a5f5);
+  color: white;
+}
+
+.continue-button.disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  cursor: not-allowed;
+}
+
+.continue-button.enabled:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(100, 181, 246, 0.3);
+}
+
+/* Debug Information */
+.debug-info h4 {
+  margin: 0 0 1rem 0;
+  color: #ff6b6b;
+  font-size: 1rem;
+}
+
+.debug-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .calibration-page {
+    flex-direction: column;
+  }
+  
+  .camera-section {
+    height: 60%;
+  }
+  
+  .control-panel {
+    height: 40%;
+    width: 100% !important;
+    border-left: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .panel-toggle {
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .panel-content {
+    margin-left: 0;
+    margin-top: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .panel-content {
+    padding: 1rem;
+  }
+  
+  .panel-header h2 {
+    font-size: 1.2rem;
+  }
+  
+  .panel-section h3 {
+    font-size: 1.1rem;
+  }
+  
+  .test-card {
+    padding: 1rem;
+  }
+  
+  .test-icon {
+    font-size: 1.5rem;
+  }
+}

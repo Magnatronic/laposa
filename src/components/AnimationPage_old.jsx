@@ -23,11 +23,9 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
     leftHandRaised: false,
     rightHandRaised: false
   })
+
   // Debug controls
   const [showWristCursors, setShowWristCursors] = useState(true)
-  
-  // Panel controls
-  const [isPanelOpen, setIsPanelOpen] = useState(true)
 
   console.log('[AnimationPage] State:', {
     cameraReady,
@@ -274,28 +272,59 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
     console.log('[AnimationPage] Changing theme to:', newTheme)
     setAnimationTheme(newTheme)
   }
-
   const toggleWristCursors = () => {
     setShowWristCursors(!showWristCursors)
     console.log('[AnimationPage] Wrist cursors', !showWristCursors ? 'enabled' : 'disabled')
   }
 
-  const togglePanel = () => {
-    setIsPanelOpen(!isPanelOpen)
-    console.log('[AnimationPage] Panel', !isPanelOpen ? 'opened' : 'closed')
-  }
   return (
     <div className="animation-page">
-      {/* Main content area with animation/camera */}
-      <div className="main-content">
-        {/* P5.js animation canvas - takes full screen */}
+      {/* Control header */}
+      <div className="animation-header">
+        <div className="header-left">
+          <button 
+            onClick={onBackToCalibration}
+            className="back-button"
+          >
+            ← Back to Calibration
+          </button>
+          <h2>Movement Animation Studio</h2>
+        </div>
+        
+        <div className="header-controls">
+          <div className="theme-selector">
+            <label htmlFor="theme-select">Theme:</label>
+            <select 
+              id="theme-select"
+              value={animationTheme} 
+              onChange={(e) => changeTheme(e.target.value)}
+            >
+              <option value="particles">Particles</option>
+              <option value="ripples">Ripples</option>
+              <option value="fireworks">Fireworks</option>
+              <option value="flowers">Flowers</option>
+            </select>
+          </div>
+          
+          <button 
+            onClick={togglePlayPause}
+            className={`play-pause-button ${isPlaying ? 'playing' : 'paused'}`}
+          >
+            {isPlaying ? '⏸️ Pause' : '▶️ Play'}
+          </button>
+        </div>
+      </div>
+
+      {/* Main animation area */}
+      <div className="animation-content">
+        {/* P5.js animation canvas */}
         <div 
           ref={p5ContainerRef}
           className="animation-canvas-container"
         />
-        
-        {/* Hidden camera feed for pose detection */}
-        <div className="hidden-camera">
+
+        {/* Camera feed (smaller, for monitoring) */}
+        <div className="camera-monitor">
           <Webcam
             ref={webcamRef}
             audio={false}
@@ -306,114 +335,46 @@ const AnimationPage = ({ onBackToCalibration, animationTheme: initialTheme = 'pa
               facingMode: "user"
             }}
             onUserMedia={handleCameraReady}
-            className="hidden-webcam"
+            className="monitor-webcam"
           />
+          
+          <div className="monitor-status">
+            <div className={`status-dot ${cameraReady && modelLoaded ? 'active' : ''}`}></div>
+            <span>Tracking {currentPoses.length} person{currentPoses.length !== 1 ? 's' : ''}</span>
+          </div>
         </div>
-      </div>
-
-      {/* Collapsible Control Panel */}
-      <div className={`control-panel ${isPanelOpen ? 'open' : 'closed'}`}>
-        {/* Panel toggle button */}
-        <button 
-          className="panel-toggle"
-          onClick={togglePanel}
-          aria-label={isPanelOpen ? 'Close panel' : 'Open panel'}
-        >
-          {isPanelOpen ? '✕' : '☰'}
-        </button>
-
-        {/* Panel content */}
-        <div className="panel-content">
-          {/* Header with back button and title */}
-          <div className="panel-header">
+      </div>        {/* Movement indicators */}
+      <div className="movement-indicators">
+        <div className={`indicator ${currentMovements.leftHandRaised ? 'active' : ''}`}>
+          <span className="indicator-icon">✋</span>
+          <span className="indicator-label">Left Hand</span>
+        </div>
+        
+        <div className={`indicator ${currentMovements.rightHandRaised ? 'active' : ''}`}>
+          <span className="indicator-icon">🤚</span>
+          <span className="indicator-label">Right Hand</span>
+        </div>
+      </div>      {/* Debug information */}
+      {debugMode && (
+        <div className="debug-info">
+          <h4>Debug Information</h4>
+          <div className="debug-controls">
             <button 
-              onClick={onBackToCalibration}
-              className="back-button"
+              onClick={toggleWristCursors}
+              className={`debug-toggle ${showWristCursors ? 'active' : ''}`}
             >
-              ← Back to Calibration
-            </button>
-            <h2>Animation Studio</h2>
-          </div>
-
-          {/* System Status */}
-          <div className="status-section">
-            <h3>System Status</h3>
-            <div className="status-indicator">
-              <div className={`status-dot ${cameraReady && modelLoaded ? 'active' : ''}`}></div>
-              <span>Tracking {currentPoses.length} person{currentPoses.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="status-details">
-              <div>Camera: {cameraReady ? '✅ Ready' : '⏳ Loading...'}</div>
-              <div>Model: {modelLoaded ? '✅ Loaded' : '⏳ Loading...'}</div>
-            </div>
-          </div>
-
-          {/* Animation Controls */}
-          <div className="controls-section">
-            <h3>Animation Controls</h3>
-            
-            <div className="control-group">
-              <label htmlFor="theme-select">Theme:</label>
-              <select 
-                id="theme-select"
-                value={animationTheme} 
-                onChange={(e) => changeTheme(e.target.value)}
-                className="theme-select"
-              >
-                <option value="particles">Particles</option>
-                <option value="ripples">Ripples</option>
-                <option value="fireworks">Fireworks</option>
-                <option value="flowers">Flowers</option>
-              </select>
-            </div>
-            
-            <button 
-              onClick={togglePlayPause}
-              className={`play-pause-button ${isPlaying ? 'playing' : 'paused'}`}
-            >
-              {isPlaying ? '⏸️ Pause Animation' : '▶️ Play Animation'}
+              {showWristCursors ? '👁️ Hide Wrist Cursors' : '👁️‍🗨️ Show Wrist Cursors'}
             </button>
           </div>
-
-          {/* Movement Indicators */}
-          <div className="movement-section">
-            <h3>Movement Detection</h3>
-            <div className="movement-indicators">
-              <div className={`indicator ${currentMovements.leftHandRaised ? 'active' : ''}`}>
-                <span className="indicator-icon">✋</span>
-                <span className="indicator-label">Left Hand</span>
-              </div>
-              
-              <div className={`indicator ${currentMovements.rightHandRaised ? 'active' : ''}`}>
-                <span className="indicator-icon">🤚</span>
-                <span className="indicator-label">Right Hand</span>
-              </div>
-            </div>
+          <div className="debug-grid">
+            <div>Poses: {currentPoses.length}</div>
+            <div>Theme: {animationTheme}</div>
+            <div>Playing: {isPlaying ? 'Yes' : 'No'}</div>
+            <div>Wrist Cursors: {showWristCursors ? 'On' : 'Off'}</div>
+            <div>Last Movement: {Math.round((Date.now() - lastMovementTime) / 1000)}s ago</div>
           </div>
-
-          {/* Debug Information */}
-          {debugMode && (
-            <div className="debug-section">
-              <h3>Debug Information</h3>
-              <div className="debug-controls">
-                <button 
-                  onClick={toggleWristCursors}
-                  className={`debug-toggle ${showWristCursors ? 'active' : ''}`}
-                >
-                  {showWristCursors ? '👁️ Hide Wrist Cursors' : '👁️‍🗨️ Show Wrist Cursors'}
-                </button>
-              </div>
-              <div className="debug-grid">
-                <div>Poses: {currentPoses.length}</div>
-                <div>Theme: {animationTheme}</div>
-                <div>Playing: {isPlaying ? 'Yes' : 'No'}</div>
-                <div>Wrist Cursors: {showWristCursors ? 'On' : 'Off'}</div>
-                <div>Last Movement: {Math.round((Date.now() - lastMovementTime) / 1000)}s ago</div>
-              </div>
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   )
 }
